@@ -6,24 +6,21 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from config import TOKEN, OMDB_API_KEY
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-translator = Translator()
 
 def translate_to_russian(text):
-    translated = translator.translate(text, src='en', dest='ru')
-    return translated.text
+    return GoogleTranslator(source='en', target='ru').translate(text)
 
 def translate_to_english(text):
-    translated = translator.translate(text, src='ru', dest='en')
-    return translated.text
+    return GoogleTranslator(source='ru', target='en').translate(text)
 
 def search_movies(query):
     query_in_english = translate_to_english(query)
-    url = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}&t={query}&plot=full"
+    url = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}&t={query_in_english}&plot=full"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -50,12 +47,15 @@ def search_movies(query):
     else:
         return "Что-то пошло не так..."
 
-
 @dp.message(CommandStart())
 async def start(message: Message):
     await message.answer(
         "Привет! Напиши название фильма, я расскажу тебе про него."
     )
+
+@dp.message(Command("help"))
+async def help(message: Message):
+    await message.answer('Смотри, что я могу: \n/start - Запустить бота')
 
 @dp.message()
 async def send_movie_info(message: Message):
